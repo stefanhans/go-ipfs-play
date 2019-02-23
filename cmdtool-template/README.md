@@ -12,9 +12,9 @@ Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
 
 ### Hello World Command
 
-- introduce the new function `helloworld` in `commander.go`
+Here a simple exampe how to introduce a new interactive command:
 
-Add it to the map of commands
+- Add it to the map of commands in `commander.go`
 ```go
 func commandsInit() {
 	commands = make(map[string]string)
@@ -40,7 +40,7 @@ func commandsInit() {
 }
 ```
 
-Add a new case in the switch statement of `func executeCommand` in `commander.go`
+- Add a new case in the switch statement of `func executeCommand` in `commander.go`
 ```go
 func executeCommand(commandline string) bool {
 
@@ -78,7 +78,7 @@ func executeCommand(commandline string) bool {
 }
 ```
 
-Implement the actual function in `commander.go`
+- Implement the actual function in `commander.go`
 ```go
 func cmdHelloWorld(arguments []string) {
 
@@ -91,7 +91,7 @@ func cmdHelloWorld(arguments []string) {
 }
 ```
 
-Build and execute
+- Build and execute
 ```
 go build && ./cmdtool-template alice
 Start logging to "cmdtool-alice-20190223105320.log"
@@ -102,7 +102,7 @@ Hello World from me
 < Feb 23 10:53:33.571 alice> quit
 ```
 
-Open the logfile
+- Open the logfile
 ```
 cat cmdtool-alice-20190223105320.log
 2019/02/23 10:53:20 main.go:62: Session starting
