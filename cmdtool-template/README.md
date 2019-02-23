@@ -92,7 +92,7 @@ func cmdHelloWorld(arguments []string) {
 ```
 
 Build and execute
-```bash
+```
 go build && ./cmdtool-template alice
 Start logging to "cmdtool-alice-20190223105320.log"
 < Feb 23 10:53:20.380 alice> helloworld
@@ -103,7 +103,7 @@ Hello World from me
 ```
 
 Open the logfile
-```bash
+```
 cat cmdtool-alice-20190223105320.log
 2019/02/23 10:53:20 main.go:62: Session starting
 2019/02/23 10:53:25 commander.go:93: Log message from cmdHelloWorld()
@@ -113,7 +113,7 @@ cat cmdtool-alice-20190223105320.log
 ### Interactive Logging
 
 Log on, log off
-```bash
+```
 ./cmdtool-template alice
 Start logging to "cmdtool-alice-20190223112004.log"
 < Feb 23 11:20:04.892 alice> log on helloworld.log
@@ -124,7 +124,7 @@ Hello World to helloworld.log
 ```
 
 See the logfiles
-```bash
+```
 ls -1rt *log
 cmdtool-alice-20190223112004.log
 helloworld.log
@@ -132,7 +132,7 @@ cmdtool-alice-20190223112026.log
 ```
 
 and its messages
-```bash
+```
 for f in cmdtool-alice-20190223112004.log helloworld.log cmdtool-alice-20190223112026.log
 [for]> do
 [for]> echo $f
