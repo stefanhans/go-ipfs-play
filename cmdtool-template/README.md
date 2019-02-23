@@ -8,7 +8,7 @@ Here is the template for an interactive command line tool. It comes with these b
 Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
 ```
 
-##### Hello World Command
+### Hello World Command
 
 - introduce the new function `helloworld` in `commander.go`
 
@@ -108,7 +108,7 @@ cat cmdtool-alice-20190223105320.log
 2019/02/23 10:53:33 commander.go:93: Log message from cmdHelloWorld(from me)
 ```
 
-##### Interactive Logging
+### Interactive Logging
 
 Log on, log off
 ```bash
