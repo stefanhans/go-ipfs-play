@@ -12,7 +12,7 @@ Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
 
 ### Hello World Command
 
-Here a simple exampe how to introduce a new interactive command:
+Here a simple example how to introduce a new interactive command:
 
 - Add it to the map of commands in `commander.go`
 ```go
