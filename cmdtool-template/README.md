@@ -10,6 +10,8 @@ Here is the template for an interactive command line tool. It comes with these b
 Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
 ```
 
+Not existing commands display the commands available.
+
 ### Hello World Command
 
 Here a simple example how to introduce a new interactive command:
