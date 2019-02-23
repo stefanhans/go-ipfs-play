@@ -1,3 +1,5 @@
+# cmdtool-template
+
 Here is the template for an interactive command line tool. It comes with these basic features
 
 - command completion and history
