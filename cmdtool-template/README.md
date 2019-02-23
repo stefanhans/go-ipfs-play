@@ -4,7 +4,7 @@ Here is the template for an interactive command line tool. It comes with these b
 - interactive logging
 - individual function integration 
 
-```bash
+```
 Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
 ```
 
