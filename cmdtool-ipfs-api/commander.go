@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ipfs/go-ipfs-api"
 )
 
 var (
@@ -18,22 +20,14 @@ var (
 	tmpDebugfile *os.File
 )
 
-// todo add exported function to add new command
-
-// todo add support for multiple comands per line
-
 func commandsInit() {
 	commands = make(map[string]string)
 
-	// Hello World
-	commands["helloworld"] = "helloworld [text] \n\t helloworld is the obvious example for creating a new interactive comand\n"
+	// Shell Exec
+	commands["commands"] = "commands  \n\t commands shows all commands\n"
 
 	// Internals
 	commands["log"] = "log (on <filename>)|off \n\t log starts or stops writing logging output in the specified file\n"
-
-	commands["execute"] = "execute file \n\t execute execute the commands in the file line by line, '#' is comment\n"
-	commands["sleep"] = "sleep seconds \n\t sleep sleeps for seconds\n"
-	commands["echo"] = "echo text_w/o_linebreak \n\t echo prints rest of line\n"
 
 	commands["quit"] = "quit  \n\t close the session and exit\n"
 
@@ -59,24 +53,12 @@ func executeCommand(commandline string) bool {
 		// Switch according to the first word and call appropriate function with the rest as arguments
 		switch commandFields[0] {
 
-		case "helloworld":
-			cmdHelloWorld(commandFields[1:])
+		case "commands":
+			jsonCommands(commandFields[1:])
 			return true
 
 		case "log":
 			cmdLogging(commandFields[1:])
-			return true
-
-		case "execute":
-			executeScript(commandFields[1:])
-			return true
-
-		case "sleep":
-			sleepScript(commandFields[1:])
-			return true
-
-		case "echo":
-			echoScript(commandFields[1:])
 			return true
 
 		case "quit":
@@ -94,14 +76,6 @@ func executeCommand(commandline string) bool {
 	}
 	return false
 }
-func cmdHelloWorld(arguments []string) {
-
-	// Write to command line
-	fmt.Printf("Hello World %s\n", strings.Join(arguments, " "))
-
-	// Write to logfile
-	log.Printf("Log message from cmdHelloWorld(%s)\n", strings.Join(arguments, " "))
-}
 
 // Display the usage of all available commands
 func usage() {
@@ -109,55 +83,6 @@ func usage() {
 		fmt.Printf("%v\n", commands[key])
 	}
 
-}
-
-func scriptPrompt(scriptname string) string {
-	return fmt.Sprintf("<%s %q> ", time.Now().Format("Jan 2 15:04:05.000"), scriptname)
-}
-
-func executeScript(arguments []string) {
-
-	if len(arguments) == 0 {
-		fmt.Printf("error: no filename to execute specified\n")
-		return
-	}
-
-	b, err := ioutil.ReadFile(arguments[0])
-	if err != nil {
-		fmt.Printf("ioutil.ReadFile: %v\n", err)
-		return
-	}
-
-	for _, line := range strings.Split(string(b), "\n") {
-		if strings.TrimSpace(line) == "" ||
-			strings.Split(strings.TrimSpace(line), "")[0] == "#" {
-			continue
-		}
-		echoScript(strings.Split(scriptPrompt(arguments[0])+line, " "))
-		if _, ok := commands[strings.Split(line, " ")[0]]; ok {
-			executeCommand(line)
-		} else {
-			fmt.Printf("error: %q is an unknown command\n", strings.Split(line, " ")[0])
-		}
-	}
-}
-
-func sleepScript(arguments []string) {
-
-	var numSeconds int
-
-	if len(arguments) == 0 {
-		numSeconds = 1
-	} else {
-		numSeconds, err = strconv.Atoi(arguments[0])
-	}
-
-	time.Sleep(time.Second * time.Duration(numSeconds))
-}
-
-func echoScript(arguments []string) {
-
-	fmt.Printf("%s\n", strings.Join(arguments, " "))
 }
 
 func quitCmdTool(arguments []string) {
@@ -168,12 +93,100 @@ func quitCmdTool(arguments []string) {
 	os.Exit(0)
 }
 
+func jsonCommands(arguments []string) {
+
+	sh := shell.NewShell("localhost:5001")
+
+	var commands map[string]interface{}
+	err = sh.Request("commands", "flags=true").Exec(context.Background(), &commands)
+	if err != nil {
+		fmt.Printf("commands.Exec(): %v\n", err)
+	}
+	//fmt.Printf("commands: %v\n", commands)
+
+	jsonBytes, err := json.MarshalIndent(commands, "", "    ")
+	if err != nil {
+		fmt.Printf("json.MarshalIndent(): %v\n", err)
+	}
+	fmt.Printf("commands: %v\n", string(jsonBytes))
+}
+
 func play(arguments []string) {
 
 	// Get rid of warnings
 	_ = arguments
 
 	log.Printf("CMD: play\n")
+
+	sh := shell.NewShell("localhost:5001")
+
+	var commands map[string]interface{}
+	err = sh.Request("commands", "flags=true").Exec(context.Background(), &commands)
+	if err != nil {
+		fmt.Printf("commands.Exec(): %v\n", err)
+	}
+	//fmt.Printf("commands: %v\n", commands)
+
+	jsonBytes, err := json.MarshalIndent(commands, "", "    ")
+	if err != nil {
+		fmt.Printf("json.MarshalIndent(): %v\n", err)
+	}
+	//fmt.Printf("commands: %v\n", string(jsonBytes))
+
+	// Manually read from "unknown" JSON data
+	var f interface{}
+	err = json.Unmarshal(jsonBytes, &f)
+	if err != nil {
+		fmt.Printf("json.Unmarshal(b, conf): %v\n", err)
+		return
+	}
+	m := f.(map[string]interface{})
+
+	for k, v := range m {
+		fmt.Println("\n")
+		switch vv := v.(type) {
+		case string:
+
+			fmt.Printf("%q: %v\n", k, vv)
+
+		case []interface{}:
+			fmt.Println(k, "is an array:")
+			for i, u := range vv {
+				fmt.Println(i, u)
+			}
+
+		case map[string]interface{}:
+			fmt.Printf("%q leads deeper via another map[string]interface{}\n", k)
+
+			n := v.(map[string]interface{})
+			fmt.Printf("%v\n", n)
+		case nil:
+			fmt.Printf("%q was not set in this configuration\n", k)
+		default:
+			fmt.Printf("%q is of a type %v\n", k, v)
+		}
+	}
+
+	//bootstrapServer, err := sh.BootstrapAddDefault()
+	//if err != nil {
+	//	fmt.Printf("BootstrapAddDefault(): %v\n", err)
+	//}
+	//for i, b := range bootstrapServer {
+	//
+	//	fmt.Printf("bootstrapServer %d: %v\n", i, b)
+	//}
+
+	//var listOutput shell.PeersList
+	//err = sh.Request("bootstrap/list").Exec(context.Background(), &listOutput)
+	//if err != nil {
+	//	fmt.Printf("bootstrap/list.Exec(): %v\n", err)
+	//}
+	//fmt.Printf("listOutput: %v\n", listOutput)
+
+	//for i, b := range listOutput.Peers {
+	//
+	//	fmt.Printf("listOutput.Peers %d: %v\n", i, b)
+	//}
 }
 
 func cmdLogging(arguments []string) {

@@ -5,6 +5,7 @@ Here is the template for an interactive command line tool. It comes with these b
 - command completion and history
 - interactive logging
 - individual function integration 
+- script execution
 
 ```
 Usage: ./cmdtool-tempate [-debug=false | -debugfile <logfilename>] <name>
@@ -16,7 +17,9 @@ Not existing commands display the commands available.
 
 Here a simple example how to introduce a new interactive command:
 
-- Add it to the map of commands in `commander.go`
+<br>
+
+Add it to the map of commands in `commander.go`
 ```go
 func commandsInit() {
 	commands = make(map[string]string)
@@ -42,7 +45,9 @@ func commandsInit() {
 }
 ```
 
-- Add a new case in the switch statement of `func executeCommand` in `commander.go`
+<br>
+
+Add a new case in the switch statement of `func executeCommand` in `commander.go`
 ```go
 func executeCommand(commandline string) bool {
 
@@ -80,7 +85,9 @@ func executeCommand(commandline string) bool {
 }
 ```
 
-- Implement the actual function in `commander.go`
+<br>
+
+Implement the actual function in `commander.go`
 ```go
 func cmdHelloWorld(arguments []string) {
 
@@ -93,7 +100,9 @@ func cmdHelloWorld(arguments []string) {
 }
 ```
 
-- Build and execute
+<br>
+
+Build and execute
 ```
 go build && ./cmdtool-template alice
 Start logging to "cmdtool-alice-20190223105320.log"
@@ -104,7 +113,9 @@ Hello World from me
 < Feb 23 10:53:33.571 alice> quit
 ```
 
-- Open the logfile
+<br>
+
+Open the logfile
 ```
 cat cmdtool-alice-20190223105320.log
 2019/02/23 10:53:20 main.go:62: Session starting
@@ -124,6 +135,8 @@ Hello World to helloworld.log
 < Feb 23 11:20:19.662 alice> log off
 < Feb 23 11:20:26.956 alice> quit
 ```
+
+<br>
 
 See the logfiles
 ```
@@ -157,4 +170,37 @@ cmdtool-alice-20190223112026.log
 
 Logging from other packages used has to be adapted individually. Have a look at other packages of the repository.
 
+
+
+### Using Scripts
+
+Create a file with commands, e.g. ```hello-commands.txt```
+```
+cat hello-commands.txt
+helloworld from Alice
+sleep 2
+helloworld from Bob
+echo Now Charly
+helloworld from Charly
+```
+
+<br>
+
+Call it from the cmdtool
+```
+./cmdtool-template me
+Start logging to "cmdtool-me-20190330140016.log"
+< Mar 30 14:00:16.300 me> execute hello-commands.txt
+<Mar 30 14:00:33.562 "hello-commands.txt"> helloworld from Alice
+Hello World from Alice
+<Mar 30 14:00:33.562 "hello-commands.txt"> sleep 2
+<Mar 30 14:00:35.565 "hello-commands.txt"> helloworld from Bob
+Hello World from Bob
+<Mar 30 14:00:35.567 "hello-commands.txt"> echo Now Charly
+Now Charly
+<Mar 30 14:00:35.567 "hello-commands.txt"> helloworld from Charly
+Hello World from Charly
+< Mar 30 14:00:35.567 me> quit
+
+```
 
