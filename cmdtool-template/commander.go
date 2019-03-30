@@ -25,17 +25,14 @@ var (
 func commandsInit() {
 	commands = make(map[string]string)
 
-	// Hello World
-	commands["helloworld"] = "helloworld [text] \n\t helloworld is the obvious example for creating a new interactive comand\n"
-
-	// Internals
+	// Commander
 	commands["log"] = "log (on <filename>)|off \n\t log starts or stops writing logging output in the specified file\n"
+	commands["quit"] = "quit  \n\t close the session and exit\n"
 
+	// Scripting
 	commands["execute"] = "execute file \n\t execute execute the commands in the file line by line, '#' is comment\n"
 	commands["sleep"] = "sleep seconds \n\t sleep sleeps for seconds\n"
 	commands["echo"] = "echo text_w/o_linebreak \n\t echo prints rest of line\n"
-
-	commands["quit"] = "quit  \n\t close the session and exit\n"
 
 	// Developer
 	commands["play"] = "play  \n\t for developer playing\n"
@@ -59,12 +56,12 @@ func executeCommand(commandline string) bool {
 		// Switch according to the first word and call appropriate function with the rest as arguments
 		switch commandFields[0] {
 
-		case "helloworld":
-			cmdHelloWorld(commandFields[1:])
-			return true
-
 		case "log":
 			cmdLogging(commandFields[1:])
+			return true
+
+		case "quit":
+			quitCmdTool(commandFields[1:])
 			return true
 
 		case "execute":
@@ -79,10 +76,6 @@ func executeCommand(commandline string) bool {
 			echoScript(commandFields[1:])
 			return true
 
-		case "quit":
-			quitCmdTool(commandFields[1:])
-			return true
-
 		case "play":
 			play(commandFields[1:])
 			return true
@@ -94,21 +87,20 @@ func executeCommand(commandline string) bool {
 	}
 	return false
 }
-func cmdHelloWorld(arguments []string) {
-
-	// Write to command line
-	fmt.Printf("Hello World %s\n", strings.Join(arguments, " "))
-
-	// Write to logfile
-	log.Printf("Log message from cmdHelloWorld(%s)\n", strings.Join(arguments, " "))
-}
 
 // Display the usage of all available commands
 func usage() {
 	for _, key := range commandKeys {
 		fmt.Printf("%v\n", commands[key])
 	}
+}
 
+func quitCmdTool(arguments []string) {
+
+	// Get rid of warnings
+	_ = arguments
+
+	os.Exit(0)
 }
 
 func scriptPrompt(scriptname string) string {
@@ -158,14 +150,6 @@ func sleepScript(arguments []string) {
 func echoScript(arguments []string) {
 
 	fmt.Printf("%s\n", strings.Join(arguments, " "))
-}
-
-func quitCmdTool(arguments []string) {
-
-	// Get rid of warnings
-	_ = arguments
-
-	os.Exit(0)
 }
 
 func play(arguments []string) {

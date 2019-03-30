@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,10 +28,14 @@ func commandsInit() {
 	// Shell Exec
 	commands["commands"] = "commands  \n\t commands shows all commands\n"
 
-	// Internals
+	// Commander
 	commands["log"] = "log (on <filename>)|off \n\t log starts or stops writing logging output in the specified file\n"
-
 	commands["quit"] = "quit  \n\t close the session and exit\n"
+
+	// Scripting
+	commands["execute"] = "execute file \n\t execute execute the commands in the file line by line, '#' is comment\n"
+	commands["sleep"] = "sleep seconds \n\t sleep sleeps for seconds\n"
+	commands["echo"] = "echo text_w/o_linebreak \n\t echo prints rest of line\n"
 
 	// Developer
 	commands["play"] = "play  \n\t for developer playing\n"
@@ -65,6 +71,18 @@ func executeCommand(commandline string) bool {
 			quitCmdTool(commandFields[1:])
 			return true
 
+		case "execute":
+			executeScript(commandFields[1:])
+			return true
+
+		case "sleep":
+			sleepScript(commandFields[1:])
+			return true
+
+		case "echo":
+			echoScript(commandFields[1:])
+			return true
+
 		case "play":
 			play(commandFields[1:])
 			return true
@@ -85,14 +103,6 @@ func usage() {
 
 }
 
-func quitCmdTool(arguments []string) {
-
-	// Get rid of warnings
-	_ = arguments
-
-	os.Exit(0)
-}
-
 func jsonCommands(arguments []string) {
 
 	sh := shell.NewShell("localhost:5001")
@@ -109,6 +119,113 @@ func jsonCommands(arguments []string) {
 		fmt.Printf("json.MarshalIndent(): %v\n", err)
 	}
 	fmt.Printf("commands: %v\n", string(jsonBytes))
+}
+
+func quitCmdTool(arguments []string) {
+
+	// Get rid of warnings
+	_ = arguments
+
+	os.Exit(0)
+}
+
+func scriptPrompt(scriptname string) string {
+	return fmt.Sprintf("<%s %q> ", time.Now().Format("Jan 2 15:04:05.000"), scriptname)
+}
+
+func executeScript(arguments []string) {
+
+	if len(arguments) == 0 {
+		fmt.Printf("error: no filename to execute specified\n")
+		return
+	}
+
+	b, err := ioutil.ReadFile(arguments[0])
+	if err != nil {
+		fmt.Printf("ioutil.ReadFile: %v\n", err)
+		return
+	}
+
+	for _, line := range strings.Split(string(b), "\n") {
+		if strings.TrimSpace(line) == "" ||
+			strings.Split(strings.TrimSpace(line), "")[0] == "#" {
+			continue
+		}
+		echoScript(strings.Split(scriptPrompt(arguments[0])+line, " "))
+		if _, ok := commands[strings.Split(line, " ")[0]]; ok {
+			executeCommand(line)
+		} else {
+			fmt.Printf("error: %q is an unknown command\n", strings.Split(line, " ")[0])
+		}
+	}
+}
+
+func sleepScript(arguments []string) {
+
+	var numSeconds int
+
+	if len(arguments) == 0 {
+		numSeconds = 1
+	} else {
+		numSeconds, err = strconv.Atoi(arguments[0])
+	}
+
+	time.Sleep(time.Second * time.Duration(numSeconds))
+}
+
+func echoScript(arguments []string) {
+
+	fmt.Printf("%s\n", strings.Join(arguments, " "))
+}
+
+func cmdLogging(arguments []string) {
+
+	if len(arguments) == 0 ||
+		(len(arguments) == 1 && arguments[0] != "off") {
+		fmt.Printf("Error: wrong input. Usage: \n\t 'log (on <filename>) | off\n")
+
+		return
+	}
+
+	if arguments[0] == "on" && len(arguments) > 1 {
+		log.Printf("Switch to logging by command to %q\n", arguments[1])
+		tmpDebugfile, err = startLogging(arguments[1])
+		if err != nil {
+			fmt.Printf("Error: startLogging: %v\n", err)
+		} else {
+			log.Printf("Start logging by command to %q\n", arguments[1])
+		}
+
+		return
+	}
+
+	if arguments[0] == "off" {
+		log.Printf("Stop logging by command")
+		defer tmpDebugfile.Close()
+
+		// Start debugging to file, if switched on or filename specified
+		if *debug || len(*debugfilename) > 0 {
+
+			if len(*debugfilename) == 0 {
+
+				// Prepare logfile for logging
+				year, month, day := time.Now().Date()
+				hour, minute, second := time.Now().Clock()
+				logfilename = fmt.Sprintf("cmdtool-%s-%v%02d%02d%02d%02d%02d.log", name,
+					year, int(month), int(day), int(hour), int(minute), int(second))
+			} else {
+				logfilename = *debugfilename
+			}
+			log.Printf("Switch logging to %q\n", logfilename)
+			_ = tmpDebugfile.Close()
+
+			_, err := startLogging(logfilename)
+			if err != nil {
+				panic(err)
+			}
+			log.Printf("Switch back from logging by command to %q\n", tmpDebugfile.Name())
+		}
+	}
 }
 
 func play(arguments []string) {
@@ -187,54 +304,4 @@ func play(arguments []string) {
 	//
 	//	fmt.Printf("listOutput.Peers %d: %v\n", i, b)
 	//}
-}
-
-func cmdLogging(arguments []string) {
-
-	if len(arguments) == 0 ||
-		(len(arguments) == 1 && arguments[0] != "off") {
-		fmt.Printf("Error: wrong input. Usage: \n\t 'log (on <filename>) | off\n")
-
-		return
-	}
-
-	if arguments[0] == "on" && len(arguments) > 1 {
-		log.Printf("Switch to logging by command to %q\n", arguments[1])
-		tmpDebugfile, err = startLogging(arguments[1])
-		if err != nil {
-			fmt.Printf("Error: startLogging: %v\n", err)
-		} else {
-			log.Printf("Start logging by command to %q\n", arguments[1])
-		}
-
-		return
-	}
-
-	if arguments[0] == "off" {
-		log.Printf("Stop logging by command")
-		defer tmpDebugfile.Close()
-
-		// Start debugging to file, if switched on or filename specified
-		if *debug || len(*debugfilename) > 0 {
-
-			if len(*debugfilename) == 0 {
-
-				// Prepare logfile for logging
-				year, month, day := time.Now().Date()
-				hour, minute, second := time.Now().Clock()
-				logfilename = fmt.Sprintf("cmdtool-%s-%v%02d%02d%02d%02d%02d.log", name,
-					year, int(month), int(day), int(hour), int(minute), int(second))
-			} else {
-				logfilename = *debugfilename
-			}
-			log.Printf("Switch logging to %q\n", logfilename)
-			_ = tmpDebugfile.Close()
-
-			_, err := startLogging(logfilename)
-			if err != nil {
-				panic(err)
-			}
-			log.Printf("Switch back from logging by command to %q\n", tmpDebugfile.Name())
-		}
-	}
 }
