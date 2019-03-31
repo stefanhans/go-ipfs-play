@@ -87,7 +87,7 @@ func executeCommand(commandline string) bool {
 
 <br>
 
-Implement the actual function in `commander.go`
+Implement the actual function
 ```go
 func cmdHelloWorld(arguments []string) {
 
